@@ -1,0 +1,78 @@
+package com.example.darren.projecttest;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.Toast;
+public class MainActivity extends Activity implements View.OnClickListener {
+    /**
+     * This Activity is used for letting the user either login or register into the system.
+     * If the user wishes to login, they have three attempts to login.
+     * If they are used up - user cannot login to the system
+     * If the user wishes to register, they can click a button that will take them to RegisterActivity.
+     */
+    EditText username, password;
+    ImageButton loginButton;
+    Button registerButton;
+    int attempt = 0; //this is used for user verfication. If this reaches 3, user will not be able to login to the system.
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+        /**
+         * XML declarations for various XML objects declared in activity_main.xml.
+         * There are two EditTexts where the user can enter their password and username,
+         * and an ImageButton and Button where the user can login and register.
+         *
+         */
+        username = (EditText) findViewById(R.id.etEmailAddress);
+        password = (EditText) findViewById(R.id.etPassword);
+        loginButton = (ImageButton) findViewById(R.id.ibLoginIn);
+        registerButton = (Button) findViewById(R.id.bRegister);
+        //OnClickListeners for registerButton and loginButton. Will wait for user action to click on them.
+        registerButton.setOnClickListener(this);
+        loginButton.setOnClickListener(this);
+    }
+    // If user clicks on one of the two buttons start this method.
+    public void onClick(View v) {
+        //if user clicks on the register button do this
+        if (v.getId() == R.id.bRegister) {
+            Intent i = new Intent(MainActivity.this, RegisterActivity.class); //creating new intent for going to the registration page
+            startActivity(i); //starts new Activity
+        }
+       //if user clicks on login button do this
+        if (v.getId() == R.id.ibLoginIn) {
+            try{ //Start of try-catch block in order to detect any errors for login.
+                //Setting up strings to contain user entry of username and password.
+            final String uname = username.getText().toString();
+            final String pasword = password.getText().toString();
+            Database database = new Database(this);
+            String pword = database.searchPassword(uname);
+            if (pword.equals(pasword)){ //If the user's details match what exists in the database do this
+                Toast.makeText(MainActivity.this, "Login successful!", Toast.LENGTH_SHORT).show(); //Toast to show that the user has successfuly logged in.
+                Intent i = new Intent(MainActivity.this, badges_page.class); //Starting new Intent to take user to the badges page.
+                startActivity(i); //Starting new Activity
+            } else { //If user's login details aren't recognised then do this
+                Toast toast = Toast.makeText(getApplicationContext(), "Login details are not recognised", Toast.LENGTH_SHORT); //Toast element : will pop up in bottom of screen to tell user that their login has failed.
+                toast.show();
+                attempt++; //For each failed login attempt, the int attempt will be incremented by 1.
+            }if (attempt == 3){ // When attempt reaches 3, the user will not be allowed to login to the system.
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this); //create new error message
+                builder.setMessage("Sorry but you have used up your attempts at login!").setNegativeButton("OK", null).create().show(); //shows user error message
+                loginButton.setVisibility(View.INVISIBLE); //hides login button
+            }else{ //if user has failed to login less than 3 times
+                Toast toast = Toast.makeText(getApplicationContext(), "Attempts remaining  :    "  + attempt, Toast.LENGTH_SHORT); //shows user attempts remaining
+                toast.show();
+            }
+            }catch (Exception e){
+                e.getStackTrace(); //Prints the stack trace of the exception.
+            }
+        }
+    }
+}
